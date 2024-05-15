@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <script>
+        var frecuencias = {
+            'ingles': {
+                'a': 0.08167, 'b': 0.01492, 'c': 0.02782, 'd': 0.04253, 'e': 0.12702, 'f': 0.02228,
+                'g': 0.02015, 'h': 0.06094, 'i': 0.06966, 'j': 0.00153, 'k': 0.00772, 'l': 0.04025,
+                'm': 0.02406, 'n': 0.06749, 'o': 0.07507, 'p': 0.01929, 'q': 0.00095, 'r': 0.05987,
+                's': 0.06327, 't': 0.09056, 'u': 0.02758, 'v': 0.00978, 'w': 0.02360, 'x': 0.00150,
+                'y': 0.01974, 'z': 0.00074
+            },
+            'espanol': {
+                'a': 0.11525, 'b': 0.02215, 'c': 0.04019, 'd': 0.05010, 'e': 0.12181, 'f': 0.00692,
+                'g': 0.01768, 'h': 0.00703, 'i': 0.06247, 'j': 0.00493, 'k': 0.00011, 'l': 0.04967,
+                'm': 0.03157, 'n': 0.06712, 'o': 0.08683, 'p': 0.02510, 'q': 0.00877, 'r': 0.06871,
+                's': 0.07977, 't': 0.04632, 'u': 0.02927, 'v': 0.01138, 'w': 0.00017, 'x': 0.00215,
+                'y': 0.01008, 'z': 0.00467
+            }
+        };
+
+        var monoalfabetico = monoalfabetico || (function () {
+            var replace = function (txt, alfabeto) {
+                var re = /([a-zñáéíóúü])/ig;
+                return String(txt).replace(re, function (match) {
+                    var idx = alfabeto.indexOf(match.toLowerCase());
+                    if (idx != -1) {
+                        return alfabeto[idx];
+                    }
+                    return match;
+                });
+            };
+
+            return {
+                encode: function (txt, idioma) {
+                    var alfabeto = Object.keys(frecuencias[idioma]).sort(function (a, b) {
+                        return frecuencias[idioma][b] - frecuencias[idioma][a];
+                    });
+                    return replace(txt, alfabeto);
+                },
+                decode: function (txt, idioma) {
+                    var alfabeto = Object.keys(frecuencias[idioma]).sort(function (a, b) {
+                        return frecuencias[idioma][b] - frecuencias[idioma][a];
+                    });
+                    return replace(txt, alfabeto);
+                }
+            };
+        })();
+
+        function calcularSimilitud(txt, idioma) {
+            var frecuenciaMensaje = {};
+            var totalCaracteres = 0;
+
+            // Calcular frecuencia de cada letra en el mensaje
+            for (var i = 0; i < txt.length; i++) {
+                var char = txt[i].toLowerCase();
+                if (char.match(/[a-zñáéíóúü]/)) {
+                    if (!frecuenciaMensaje[char]) {
+                        frecuenciaMensaje[char] = 0;
+                    }
+                    frecuenciaMensaje[char]++;
+                    totalCaracteres++;
+                }
+            }
+
+            // Normalizar frecuencias
+            for (var key in frecuenciaMensaje) {
+                frecuenciaMensaje[key] /= totalCaracteres;
+            }
+
+            // Calcular similitud entre frecuencias del mensaje y del idioma
+            var similitud = 0;
+            for (var letra in frecuenciaMensaje) {
+                similitud += Math.abs(frecuenciaMensaje[letra] - frecuencias[idioma][letra]);
+            }
+
+            // Normalizar similitud
+            similitud /= Object.keys(frecuenciaMensaje).length;
+
+            // Similitud máxima posible es 1, así que invertimos el valor
+            return 1 - similitud;
+        }
+
+        function identificarIdioma(txt) {
+            var similitudIngles = calcularSimilitud(txt, 'ingles');
+            var similitudEspanol = calcularSimilitud(txt, 'espanol');
+
+            if (similitudIngles > similitudEspanol) {
+                return 'Inglés';
+            } else {
+                return 'Español';
+            }
+        }
+
+        function procesar() {
+            var texto = document.getElementById("cadena").value;
+            var idioma = identificarIdioma(texto);
+            document.getElementById("idioma_detectado").innerHTML = "Idioma detectado: " + idioma;
+            document.getElementById("resultado").innerHTML = monoalfabetico.encode(texto, idioma);
+        }
+    </script>
+
+    <style>
+        textarea {width:400px;}
+        table {border-collapse: collapse;}
+        th, td {border: 1px solid black; padding: 5px;}
+    </style>
+</head>
+
+<body>
+    <textarea id="cadena"></textarea>
+    <p><input type="button" value="Procesar" onclick="procesar()"></p>
+
+    <div id="idioma_detectado"></div>
+    <div id="resultado"></div>
+
+    <h2>Frecuencias relativas</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Letra</th>
+                <th>Inglés</th>
+                <th>Español</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>a</td>
+                <td>8.167%</td>
+                <td>11.525%</td>
+            </tr>
+            <tr>
+                <td>b</td>
+                <td>1.492%</td>
+                <td>2.215%</td>
+            </tr>
+            <tr>
+                <td>c</td>
+                <td>2.782%</td>
+                <td>4.019%</td>
+            </tr>
+            <tr>
+                <td>d</td>
+                <td>4.253%</td>
+                <td>5.010%</td>
+            </tr>
+            <tr>
+                <td>e</td>
+                <td>12.702%</td>
+                <td>12.181%</td>
+            </tr>
+            <tr>
+                <td>f</td>
+                <td>2.228%</td>
+                <td>0.692%</td>
+            </tr>
+            <tr>
+                <td>g</td>
+                <td>2.015%</td>
+                <td>1.768%</td>
+            </tr>
+            <tr>
+                <td>h</td>
+                <td>6.094%</td>
+                <td>0.703%</td>
+            </tr>
+            <tr>
+                <td>i</td>
+                <td>6.966%</td>
+                <td>6.247%</td>
+            </tr>
+            <tr>
+                <td>j</td>
+                <td>0.153%</td>
+                <td>0.493%</td>
+            </tr>
+            <tr>
+                <td>k</td>
+                <td>0.772%</td>
+                <td>0.011%</td>
+            </tr>
+            <tr>
+                <td>l</td>
+                <td>4.025%</td>
+                <td>4.967%</td>
+            </tr>
+            <tr>
+                <td>m</td>
+                <td>2.406%</td>
+                <td>3.157%</td>
+            </tr>
+            <tr>
+                <td>n</td>
+                <td>6.749%</td>
+                <td>6.712%</td>
+            </tr>
+            <tr>
+                <td>o</td>
+                <td>7.507%</td>
+                <td>8.683%</td>
+            </tr>
+            <tr>
+                <td>p</td>
+                <td>1.929%</td>
+                <td>2.510%</td>
+            </tr>
+            <tr>
+                <td>q</td>
+                <td>0.095%</td>
+                <td>0.877%</td>
+            </tr>
+            <tr>
+                <td>r</td>
+                <td>5.987%</td>
+                <td>6.871%</td>
+            </tr>
+            <tr>
+                <td>s</td>
+                <td>6.327%</td>
+                <td>7.977%</td>
+            </tr>
+            <tr>
+                <td>t</td>
+                <td>9.056%</td>
+                <td>4.632%</td>
+            </tr>
+            <tr>
+                <td>u</td>
+                <td>2.758%</td>
+                <td>2.927%</td>
+            </tr>
+            <tr>
+                <td>v</td>
+                <td>0.978%</td>
+                <td>1.138%</td>
+            </tr>
+            <tr>
+                <td>w</td>
+                <td>2.360%</td>
+                <td>0.017%</td>
+            </tr>
+            <tr>
+                <td>x</td>
+                <td>0.150%</td>
+                <td>0.215%</td>
+            </tr>
+            <tr>
+                <td>y</td>
+                <td>1.974%</td>
+                <td>1.008%</td>
+            </tr>
+            <tr>
+                <td>z</td>
+                <td>0.074%</td>
+                <td>0.467%</td>
+            </tr>
+        </tbody>
+    </table>
+    
+</body>
+</html>
